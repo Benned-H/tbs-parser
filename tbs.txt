@@ -1,0 +1,13 @@
+<tbs> ::= <action-list>
+<action-list> ::= <action> <action-tail>
+<action-tail> ::= <temporal-relation> <action> <action-tail> | <epsilon>
+<temporal-relation> ::= then | before | after
+<action> ::= navigate <mode> <constraint-list> to <goal> <constraint-list>
+<mode> ::= quickly | safely | <epsilon>
+<constraint-list> ::= <constraint> <constraint-tail> | <epsilon>
+<constraint-tail> ::= <logic-operator> <constraint> <constraint-tail> | <epsilon>
+<constraint> ::= <location-relation> | not <location-relation>
+<logic-operator> ::= and | or
+<location-relation> ::= left of the <object> | right of the <object> | behind the <object> | in front of the <object> | near the <object> | far from the <object> | between the <object> and <object>
+<goal> ::= the <object> | the <object> <location-relation>
+<object> ::= barrel | tree | car | person | cone | hydrant

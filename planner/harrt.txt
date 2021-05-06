@@ -1,0 +1,177 @@
+Homotopy-Aware RRT* Pseudocode
+Edited by Benned Hedegaard from [CITE 2 PAPERS]
+
+We want to encode path homotopy classes, i.e. classes of paths which share the same topology defined by certain
+spatial relations to objects. We'll divide the map into subregions and track how paths cross these regions.
+
+Decomposition - We move the center point c into an obstacle associated with the inferred spatial relations, centering
+our decomposition around this object. The decomposition process takes the following steps:
+
+Also see Algorithm 1 in the HA-RRT* paper.
+
+1. Sample some point bk within each object Bk s.t. the point does not lie on a line connecting any other two
+representative points.
+
+2. Sample center point c within one of the obstacles, again not on any line connecting two representative points.
+
+3. Create a radial structure of lines from center point c to all representative points bk. Obstacles will cut these
+lines into line segments, where each segment terminates at either an obstacle or map boundary.
+
+4. Compute the resulting line segments for each line based on the obstacles and map boundary.
+
+5. These line segments are called our reference frames R, separating the map into subregions S. Assign each reference
+frame some ID character and return R.
+
+Describing Paths - The sequence of reference frames crossed by a given path creates a string which describes that path.
+For a given planning problem (xs, xg), the start and goal position implicitly define our start and goal subregions.
+
+Some DFA and the corresponding REPTrim() algorithm translate these path strings into the smallest possible string for
+any path within a particular homotopy class. In order to understand these parts of the algorithm, I jump to the earlier
+paper titled "Homotopy-Aware RRT*: Toward Human-Robot Topological Path-Planning" for details.
+
+Homotopy - A mathematical formalism describing the inherent similarity or dissimilarity of two paths. If two paths
+begin and end at the same points, and they can be smoothly deformed into each other without crossing obstacles or
+moving their endpoints, we say the paths are homotopic. The same idea can be applied to sets of paths: a homotopy class
+is the set of paths which are homotopic to each other.
+
+To avoid infinite possible loops, they consider only "simple paths" which do not form complete loops around obstacles.
+Given this setup, they present an algorithm for the formal problem of homotopy-based optimal path planning, basically
+finding optimal paths with respect to some cost function in a given set of permitted homotopy classes.
+
+Homotopic String Classes - As mentioned above, we divide the world into disjoint subregions using reference frames. The
+idea is that paths in the same homotopy class will cross the same sequence of reference frames. We formalize this as:
+
+Def: M = ( S, R, delta, s0, sT ) is a DFA representing the string generation process from a path, where:
+* S - Set of subregions
+* R - Set of reference frames
+* delta : S x R --> S - Transition function defining how one subregion transitions to another via some reference frame
+* s0 - Start subregion
+* sT - End subregion
+
+We create string v by:
+
+1. Start with an empty string
+2. Our path starts at x_start in s0 and ends at x_goal in sT
+3. When the path transitions over a reference frame r, append r to v
+
+After a few lemmas and theorems connecting this notation to formal definitions for homotopy, we arrive at the result:
+
+Algorithm REPTrim - This will remove REP (recursively embedded palindromic) substrings using a stack:
+
+Start with an empty stack T
+for char in v:
+    if Top(T) == char:
+        Pop(T)
+    else:
+        Push(T)
+Return T
+
+This algorithm gives us a unique non-repeating string called REPTrim(v) for any homotopy class! Thus we can compare
+these strings to evaluate when paths contradict given homotopy constraints.
+
+HA-RRT* - In order to actually plan, we'll also need a way to consider some cost objective defining optimal paths. The
+authors use the REPTrim() algorithm to restrict paths considered during RRT* search. The algorithm follows:
+
+HARRT*( x_start, x_goal ):
+
+i = 0
+Ns =  { x_start }, Es = empty, Ts = ( Ns, Es )
+Ng =  { x_goal }, Eg = empty, Tg = ( Ng, Eg )
+
+while i < N:
+    Ts, x_s_new = Explore( Ts, i )
+    Tg, x_g_new = Explore( Tg, i )
+    ps = Connect( x_s_new, Tg )
+    pg = Connect( x_g_new, Ts )
+    P = UpdateBestPathByClass( ps, P )
+    P = UpdateBestPathByClass( pg, P )
+    i++
+Return MergePaths( P )
+
+We build some start tree Ts which is an RRT* from the start position and goal tree Tg from x_goal. Here, the Connect()
+method creates a path to a vertex in the other tree, which is why Tg is provided to find the best vertex to connect to
+x_s_new. We then compare the created path to the current best path in that string block, and update the best path for
+the block if it's better. As for the Explore() method:
+
+Explore( T, i ):
+    
+x_rand = Sample(i)
+x_nearest = Nearest( T, x_rand )
+x_new = Steer( x_nearest, x_rand, n )
+
+if ObstacleFree( x_nearest, x_new ):
+    s = STR( x_nearest ) concat CRF( ( x_nearest, x_new ) )
+    if StringCheck(s):
+        x_min = x_nearest
+        X_near = Near( T, x_new, |N| )
+        for x_near in X_near:
+            if ObstacleFree( x_new, x_near ):
+                s = STR( x_near ) concat CRF( ( x_near, x_new ) )
+                if StringCheck(s):
+                    if Cost( x_near ) + c( Line( x_near, x_new ) ) < Cost( x_new ):
+                        x_min = x_near
+        Add ( x_min, x_new ) to E'
+        for x_near in X_near except x_min:
+            if ObstacleFree( x_new, x_near ):
+                s = STR( x_new ) concat CRF( ( x_new, x_near ) )
+                if StringCheck(s):
+                    if Cost( x_near ) > Cost( x_new ) + c( Line( x_new, x_near ) ):
+                        x_parent = Parent( x_near )
+                        Remove ( x_parent, x_near ) from E'
+                        Add ( x_new, x_near ) to E'
+Return T, x_new
+
+So what have we done? The following methods were introduced:
+* CRF( l ) - Returns the ID characters representing the crossed reference frames of line segment l (if any)
+* STR( x ) - Returns the string representing the crossed reference frames from the root to the node x, in order
+
+Assuming that certain homotopy constraints have been specified, StringCheck() compares whether the string for some
+subpath is a substring of strings satisfying the constraints. Thus, we eliminate branches which disobey commands. This
+is not the same as testing whether a branch has REP substrings, but rather prevents exploring branches which might have
+such substrings entirely. Note that the goal tree should compare strings in reversed order. We can eliminate branches
+that cannot be extended into a string constraint, for example with constraint "ab" we can reject the string "b" right
+away. This doesn't allow exploration outside the current subregion, which is discussed later.
+
+Connect( x_new, T ):
+p_min = empty
+X_near = Near( T, x_new, |N| )
+for x_near in X_near:
+    if ObstacleFree( x_new, x_near ):
+        if x_new in Ts:
+            p = Concat( x_new, x_near )
+        else:
+            p = Concat( x_near, x_new )
+        if StringCheck(p) and c(p) < c(p_min):
+            p_min = p
+Return p_min
+
+Here Path( v, T ) returns the path from the root of the tree T to the vertex v. Also, Concat( pa, pb ) returns a
+concatenated path combining pa and pb. If the paths are from different directions, one should be reversed. As a final
+function, MergePaths() applies REPTrim() in order to merge string blocks into homotopy classes. A set of paths P is
+the final output of HARRT*.
+
+Specifying Constraints - Our final piece connects TBS and this planning algorithm: How do we specify topological
+constraints in terms of these reference frames? First, we can specify our cost function based on "quickly" or "safely"
+where quickly considers only path length and safely will somehow weight proximity to obstacles. As for topology:
+* Commands could specify a sequence of regions, constraining our paths to a single string for that homotopy class.
+* Commands could specify regions to visit and regions to avoid.
+* Preferences, but not absolute requirements, could be given for path shapes.
+
+Their first experiment considers the single-homotopy-class case. In the original paper, these paths were sketched by
+the authors and then turned into the string representation. I'll now move back to the second paper from 2016 for their
+discussion of specifying spatial relations.
+
+These spatial relations are defined with respect to some obstacles O by a rule l. Given that paths cannot cross
+multiple reference frames at once, a few operators are defined for assembling ID characters into strings.
+* Concatenation - Concatenate two ID characters, representing a sequential visit to the corresponding reference frames.
+* Union - Union two ID characters, representing that a path may visit either of the two corresponding reference frames.
+* Negation - Negate one ID character, indicating that the corresponding reference frame should be avoided.
+
+Concrete examples for InBetween, Left/Right/Top/Bottom, and Avoid are given. Notation to assemble rules together is
+also introduced, where a sequence of spatial relations can be appended or single spatial relations can be negated.
+During online planning, we reject strings which contradict the valid string possibilities for these spatial relations.
+
+Turning the pseudocode into an actual ROS implementation is no small feat, but it's all here in my own words and I'm
+excited to get to work. I plan to draft the initial planner by Friday so that my language model is able train using
+planner feedback as soon as it's set up. More on the structure of this (likely BiLSTM) approach will be in my next
+checkpoint.

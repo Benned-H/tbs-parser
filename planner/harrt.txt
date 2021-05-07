@@ -175,3 +175,80 @@ Turning the pseudocode into an actual ROS implementation is no small feat, but i
 excited to get to work. I plan to draft the initial planner by Friday so that my language model is able train using
 planner feedback as soon as it's set up. More on the structure of this (likely BiLSTM) approach will be in my next
 checkpoint.
+
+What data structures does the HARRT* need?
+* World model - List of circular obstacles, map boundaries
+* Path - A sequence of points, boolean forward/backward
+* Tree - Nodes N, Edges E, boolean forward
+
+Decomposition - Finds the reference frames for a particular world and TBS sentence.
+Input: Obstacles Bk, map boundary, spatial relationships (to choose c)
+Output: Reference frames R each with some character
+
+Path String - Finds the representative homotopy string for a given path.
+Input: Path of points (xi,yi), reference frames R
+Output: String v
+
+REPTrim - Removes any recursively embedded palindromic substrings from string v.
+Input: String v
+Output: Trimmed string v'
+
+HARRT* Search - Plans an optimal path from x_start to x_goal obeying a given homotopy specification.
+Input: x_start, x_goal
+Output: Set of satisfying paths P
+
+Explore - Expands the tree T by randomly sampling a new node and attempting to connect it to the tree.
+Input: RRT T, integer i
+Output: Newly sampled node x_new
+
+CRF - Returns the ID characters representing the crossed reference frames of line segment l.
+Input: Line segment L
+Output: Crossed reference frames as a string
+
+STR - Returns the string representing the crossed reference frames from the root of T to x, in order.
+Input: Node x, Tree T
+Output: String v
+
+StringCheck - Checks if the given string meets the current homotopy constraints.
+Input: String v, constraints C
+Output: Boolean yes/no
+
+Connect - Connects the node x_new to RRT T.
+Input: x_new, T
+Output: Minimum ??? p_min
+
+Path - Returns the path from the root of the tree T to the vertex v.
+Input: Vertex v, Tree T
+Output: Path P
+
+Concat - Concatenates the two given paths.
+Input: Paths a and b
+Output: Concatenated path ab
+
+MergePaths - Applies REPTrim() in order to merge string blocks into homotopy classes.
+Input - Stored string blocks SB
+Output - Simplified set of string blocks SB'
+
+How do we actually get our constraints?
+* Cost function - Either raw distance or account for proximity to obstacles based on "quickly" or "safely"
+* Some set of linguistic forms -> boolean formulas over reference frames
+
+A homotopy constraint is specified in conjunctive normal form (OR of ANDs) over reference frame ID characters. As long
+as our command representation can be converted to boolean formulas, I'm not sure that it matters what format the final
+boolean formula takes. We allow these operations in the formula:
+* AND - Concatenate two ID characters, representing a sequential visit to the corresponding reference frames.
+* OR - Union two ID characters, representing that a path may visit either of the two corresponding reference frames.
+* NOT - Negate one ID character, indicating that the corresponding reference frame should be avoided.
+
+We generate these formulas based on the following types of linguistic structures:
+* InBetween( o1, o2 ) => r1 OR ... OR rn. The reference frame connecting the two
+* LeftOf( o ) = RightOf( o ) etc => r1 OR ... OR rn
+* Avoid( o ) => Avoid( LeftOf( o ) OR RightOf( o ) OR TopOf( o ) OR BottomOf( o ) )
+    = NOT( r1 OR r2 OR r3 OR r4 ) = NOT r1 AND NOT r2 AND NOT r3 AND NOT r4
+    
+Their notation seems unclear. Basically, we want two separate notions for AND which they don't have. I propose:
+* THEN - Concatenate two formulas so that one is satisfied and then the next.
+* AND - Simulataneously avoid multiple reference frames at once.
+
+To make constructing these homotopy constraints easier, each reference frame should track which objects it connects.
+

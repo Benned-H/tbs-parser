@@ -1,0 +1,8 @@
+<launch>
+	<node pkg="tf2_ros" type="static_transform_publisher" name="gui_to_world" 
+		args="0.0 0.0 0.0 0.0 0.0 0.0 world gui"/>
+	<node name="world_model_node" pkg="planner" type="world_model_node" output="screen"/>
+	<node name="gui_node" pkg="gui" type="gui_node" output="screen"/>
+	
+	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find gui)/rviz/tbs-parser.rviz"/>
+</launch>

@@ -5,7 +5,7 @@ To generate random strings from the current TBS grammar, run the command:
 
   python3 parser.py
 
-Code to double-check:
+Current code:
 
-* World model - Obstacle generation and label uniqueness
-
+* Randomly samples non-intersecting obstacles with unique identifiers
+* GUI plots the current world model of these obstacles and the map boundary

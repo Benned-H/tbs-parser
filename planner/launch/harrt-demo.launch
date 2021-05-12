@@ -4,4 +4,6 @@
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find gui)/rviz/tbs-parser.rviz"/>
     <node name="gui_node" pkg="gui" type="gui_node" output="screen"/>
 	<node name="world_model_node" pkg="planner" type="world_model_node" output="screen"/>
+	
+	<node name="harrt_node" pkg="planner" type="harrt_node" output="screen"/>
 </launch>

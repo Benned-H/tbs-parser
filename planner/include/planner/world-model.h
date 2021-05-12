@@ -7,12 +7,14 @@
 #include <vector>
 #include <string>
 #include "planner/WorldModelMsg.h"
-#include "planner/obstacle.h"
+#include "planner/ObstacleMsg.h"
 
 class WorldModel {
 	public:
 	
+	    WorldModel( void ); // Empty constructor
 	    WorldModel( const double& width, const double& height, const double& radMin, const double& radMax ); // Constructor
+	    WorldModel( const planner::WorldModelMsg& msg ); // Constructor from message
 		virtual ~WorldModel(); // Deconstructor
 		
 		// Samples the given number of obstacles
@@ -22,7 +24,7 @@ class WorldModel {
 		planner::WorldModelMsg to_msg( void ) const;
 		
 		// We represent the world via obstacles and four map boundaries
-		std::vector<Obstacle> obstacles;
+		std::vector<planner::ObstacleMsg> obstacles;
 		
 		double x_min;
 		double x_max;
@@ -34,5 +36,7 @@ class WorldModel {
         double radius_min;
         double radius_max;
 };
+
+std::ostream& operator<<( std::ostream& os, const WorldModel& wm );
 
 #endif /* WORLD_MODEL_H */

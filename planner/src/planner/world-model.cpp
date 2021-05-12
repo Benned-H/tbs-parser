@@ -6,9 +6,19 @@
 #include <chrono>
 #include "planner/world-model.h"
 
+// Empty constructor
+WorldModel::WorldModel( void ) : obstacles() {}
+
 // Constructor
 WorldModel::WorldModel( const double& width, const double& height, const double& radMin, const double& radMax ) : x_min( - width / 2.0 ), x_max( width / 2.0 ), y_min( - height / 2.0 ), y_max( height / 2.0 ), radius_min( radMin ), radius_max( radMax ) {
 
+}
+
+// Constructor from message
+WorldModel::WorldModel( const planner::WorldModelMsg& msg ) : x_min( msg.x_min ), x_max( msg.x_max ), y_min( msg.y_min ), y_max( msg.y_max ), obstacles() {
+    for ( int i = 0; i < msg.obstacles.size(); i++ ) {
+        obstacles.push_back( msg.obstacles[i] );
+    }
 }
 
 // Deconstructor
@@ -17,10 +27,10 @@ WorldModel::~WorldModel() {}
 // Samples the given number of obstacles and adds them to the world
 void WorldModel::sampleObstacles( const int& num ) {
 
-    // Create a random number generators to sample obstacle location and radius
+    // Create random number generators to sample obstacle location and radius
     std::chrono::system_clock::time_point time_now = std::chrono::high_resolution_clock::now();
-    unsigned seed = time_now.time_since_epoch().count();
-    std::default_random_engine generator( seed );
+    //unsigned seed = time_now.time_since_epoch().count();
+    std::default_random_engine generator( 281 );
     std::uniform_real_distribution<double> x_sampler( x_min, x_max );
     std::uniform_real_distribution<double> y_sampler( y_min, y_max );
     std::uniform_real_distribution<double> r_sampler( radius_min, radius_max );
@@ -46,7 +56,7 @@ void WorldModel::sampleObstacles( const int& num ) {
         
         // 2. Check other obstacles
         bool bad = false;
-        for ( Obstacle& o : obstacles ) {
+        for ( planner::ObstacleMsg& o : obstacles ) {
             double distance = std::sqrt( ( o.x - h_x ) * ( o.x - h_x ) + ( o.y - h_y ) * ( o.y - h_y ) );
             if ( ( distance - o.radius - h_r ) < 0.0 ) { // Intersects with another obstacle, skip!
                 bad = true;
@@ -56,36 +66,26 @@ void WorldModel::sampleObstacles( const int& num ) {
         
         if ( bad ) continue; // Jumps to top of while loop to try again
         
-        // Otherwise, this Obstacle works. Find a label for it and add it to our world model!
+        // Otherwise, this obstacle works. Find a label for it and add it to our world model!
         
         // TODO Redo - This is a hack to get rng integers, std::random int generator is weird the first time it's used
         double label_random_number = label_sampler( generator );
-        uint32_t label_index = 0;
+        uint32_t new_type = 0;
         if ( label_random_number > 300.0 ) {
-            label_index = 3;
+            new_type = 3;
         } else if ( label_random_number > 200.0 ) {
-            label_index = 2;
+            new_type = 2;
         } else if ( label_random_number > 100.0 ) {
-            label_index = 1;
-        } // Else leave it at 0
+            new_type = 1;
+        } // Else new_type is left at 0
         
-        std::cout << "Label sampler gave " << label_index << std::endl;
-        
-        ObstacleType new_type = ObstacleType::BARREL;
-        
-        if ( label_index == 1 ) {
-            new_type = ObstacleType::BUSH;
-        } else if ( label_index == 2 ) {
-            new_type = ObstacleType::CONE;
-        } else if ( label_index == 3 ) {
-            new_type = ObstacleType::HYDRANT;
-        }
+        std::cout << "Label sampler gave " << new_type << std::endl;
         
         uint32_t new_number = 0;
         while ( true ) {
         
             bool found = false;
-            for ( Obstacle& o : obstacles ) {
+            for ( planner::ObstacleMsg& o : obstacles ) {
                 if ( ( o.type == new_type ) && ( o.number == new_number ) ) { // Obstacles have same identifier
                     found = true;
                     break; // Exit for loop
@@ -101,7 +101,13 @@ void WorldModel::sampleObstacles( const int& num ) {
         }
         
         std::cout << "Obstacle is a " << new_type << " at (" << h_x << "," << h_y << ") with radius " << h_r << std::endl;
-        Obstacle new_obstacle( h_x, h_y, h_r, new_type, new_number );
+        
+        planner::ObstacleMsg new_obstacle;
+        new_obstacle.x = h_x;
+        new_obstacle.y = h_y;
+        new_obstacle.radius = h_r;
+        new_obstacle.type = new_type;
+        new_obstacle.number = new_number;
         obstacles.push_back( new_obstacle );
         successes++;
     }
@@ -113,14 +119,22 @@ void WorldModel::sampleObstacles( const int& num ) {
 planner::WorldModelMsg WorldModel::to_msg( void ) const {
     planner::WorldModelMsg wm;
     
-    wm.x_min.data = x_min;
-    wm.x_max.data = x_max;
-    wm.y_min.data = y_min;
-    wm.y_max.data = y_max;
+    wm.x_min = x_min;
+    wm.x_max = x_max;
+    wm.y_min = y_min;
+    wm.y_max = y_max;
     
-    for ( int i = 0; i < obstacles.size(); i++ ) {
-        wm.obstacles.push_back( obstacles[i].to_msg() );
-    }
+    wm.obstacles = obstacles;
     
     return wm;
+}
+
+std::ostream& operator<<( std::ostream& os, const WorldModel& wm ) {
+    os << "WorldModel: x[" << wm.x_min << "," << wm.x_max << "] y[" << wm.y_min << "," << wm.y_max << "]" << std::endl;
+    os << "\tObstacles {";
+    for ( const planner::ObstacleMsg& obs : wm.obstacles ) {
+        os << obs;
+    }
+    os << "}";
+    return os;
 }

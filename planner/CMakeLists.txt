@@ -52,6 +52,9 @@ add_message_files(
     FILES
     WorldModelMsg.msg
     ObstacleMsg.msg
+    PointMsg.msg
+    ReferenceFrameMsg.msg
+    ReferenceFrameArrayMsg.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -122,8 +125,15 @@ include_directories(
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME}
-    src/${PROJECT_NAME}/obstacle.cpp
+    src/${PROJECT_NAME}/point.cpp
+    src/${PROJECT_NAME}/path.cpp
+    src/${PROJECT_NAME}/line.cpp
+    src/${PROJECT_NAME}/reference-frame.cpp
     src/${PROJECT_NAME}/world-model.cpp
+    src/${PROJECT_NAME}/location-relation.cpp
+    src/${PROJECT_NAME}/constraint.cpp
+    src/${PROJECT_NAME}/action.cpp
+    src/${PROJECT_NAME}/ha-rrt.cpp
 )
 
 ## Add cmake target dependencies of the library
@@ -135,6 +145,7 @@ add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(world_model_node src/world-model-node.cpp)
+add_executable(harrt_node src/harrt-node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -145,9 +156,15 @@ add_executable(world_model_node src/world-model-node.cpp)
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 add_dependencies(world_model_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(harrt_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(world_model_node
+    ${catkin_LIBRARIES}
+    planner
+)
+
+target_link_libraries(harrt_node
     ${catkin_LIBRARIES}
     planner
 )

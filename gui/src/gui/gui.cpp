@@ -30,8 +30,22 @@ std_msgs::ColorRGBA GUI::color( double r, double g, double b, double a ) const {
 	return c;
 }
 
+void GUI::clear_markers( void ) const {
+    visualization_msgs::Marker m;
+    m.header.frame_id = "gui";
+	m.header.stamp = ros::Time::now();
+	m.ns = "gui";
+    m.action = visualization_msgs::Marker::DELETEALL;
+    m.id = 0;
+	m.lifetime = ros::Duration(); // Never auto-deletes.
+	
+	marker_pub.publish(m); // Publish cylinder
+	ros::Duration(WAIT_DURATION).sleep();
+}
+
 // TODO - If RViz doesn't reset things, could we only plot some items once?
 void GUI::update( void ) const {
+    clear_markers();
 	if ( has_world_model ) drawWorldModel();
 	if ( has_frames ) drawReferenceFrames();
 }
@@ -96,28 +110,28 @@ void GUI::drawWorldModel( void ) const {
 	line_strip.pose = getIdentityPose();
 	
 	geometry_msgs::Point p1;
-	p1.x = world_model.x_min;
-	p1.y = world_model.y_min;
+	p1.x = world_model.xy_min;
+	p1.y = world_model.xy_min;
 	p1.z = 0.0;
 	
 	geometry_msgs::Point p2;
-	p2.x = world_model.x_max;
-	p2.y = world_model.y_min;
+	p2.x = world_model.xy_max;
+	p2.y = world_model.xy_min;
 	p2.z = 0.0;
 	
 	geometry_msgs::Point p3;
-	p3.x = world_model.x_max;
-	p3.y = world_model.y_max;
+	p3.x = world_model.xy_max;
+	p3.y = world_model.xy_max;
 	p3.z = 0.0;
 	
 	geometry_msgs::Point p4;
-	p4.x = world_model.x_min;
-	p4.y = world_model.y_max;
+	p4.x = world_model.xy_min;
+	p4.y = world_model.xy_max;
 	p4.z = 0.0;
 	
 	geometry_msgs::Point p5;
-	p5.x = world_model.x_min;
-	p5.y = world_model.y_min;
+	p5.x = world_model.xy_min;
+	p5.y = world_model.xy_min;
 	p5.z = 0.0;
 	
 	line_strip.points.push_back( p1 );

@@ -9,7 +9,7 @@
 class Point {
 	public:
 	
-	    Point( const double& x, const double& y, const int& obsArg ); // Constructor
+	    Point( const double& x, const double& y, const int& obsArg = -1 ); // Constructor
 	    Point( const Point& p ); // Copy constructor
 		virtual ~Point(); // Deconstructor
 		

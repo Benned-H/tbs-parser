@@ -21,6 +21,7 @@ class GUI {
 		void handleReferenceFrames( const planner::ReferenceFrameArrayMsg::ConstPtr& msg );
 		
 		std_msgs::ColorRGBA color( double r, double g, double b, double a ) const;
+		void clear_markers( void ) const;
 		void update( void ) const;
 		
 		ros::Publisher marker_pub;

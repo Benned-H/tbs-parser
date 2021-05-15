@@ -10,12 +10,12 @@
 WorldModel::WorldModel( void ) : obstacles() {}
 
 // Constructor
-WorldModel::WorldModel( const double& width, const double& height, const double& radMin, const double& radMax ) : x_min( - width / 2.0 ), x_max( width / 2.0 ), y_min( - height / 2.0 ), y_max( height / 2.0 ), radius_min( radMin ), radius_max( radMax ) {
+WorldModel::WorldModel( const double& sizeArg, const double& radMinArg, const double& radMaxArg ) : xy_min( - sizeArg / 2.0 ), xy_max( sizeArg / 2.0 ), radius_min( radMinArg ), radius_max( radMaxArg ) {
 
 }
 
 // Constructor from message
-WorldModel::WorldModel( const planner::WorldModelMsg& msg ) : x_min( msg.x_min ), x_max( msg.x_max ), y_min( msg.y_min ), y_max( msg.y_max ), obstacles() {
+WorldModel::WorldModel( const planner::WorldModelMsg& msg ) : xy_min( msg.xy_min ), xy_max( msg.xy_max ), obstacles() {
     for ( int i = 0; i < msg.obstacles.size(); i++ ) {
         obstacles.push_back( msg.obstacles[i] );
     }
@@ -25,14 +25,10 @@ WorldModel::WorldModel( const planner::WorldModelMsg& msg ) : x_min( msg.x_min )
 WorldModel::~WorldModel() {}
 
 // Samples the given number of obstacles and adds them to the world
-void WorldModel::sampleObstacles( const int& num ) {
+void WorldModel::sampleObstacles( const int& num, const int& seed ) {
 
-    // Create random number generators to sample obstacle location and radius
-    std::chrono::system_clock::time_point time_now = std::chrono::high_resolution_clock::now();
-    //unsigned seed = time_now.time_since_epoch().count();
-    std::default_random_engine generator( 281 );
-    std::uniform_real_distribution<double> x_sampler( x_min, x_max );
-    std::uniform_real_distribution<double> y_sampler( y_min, y_max );
+    std::default_random_engine generator( seed );
+    std::uniform_real_distribution<double> xy_sampler( xy_min, xy_max );
     std::uniform_real_distribution<double> r_sampler( radius_min, radius_max );
     std::uniform_real_distribution<double> label_sampler( 0.0, 400.0 );
     
@@ -41,16 +37,16 @@ void WorldModel::sampleObstacles( const int& num ) {
     while ( successes < num ) {
     
         // Create hypothesis Obstacle information
-        double h_x = x_sampler( generator );
-        double h_y = y_sampler( generator );
+        double h_x = xy_sampler( generator );
+        double h_y = xy_sampler( generator );
         double h_r = r_sampler( generator );
         
         // Check if this Obstacle would be valid
         
         // 1. Check map boundaries
-        if ( ( ( h_x + h_r ) > x_max ) || ( ( h_x - h_r ) < x_min ) ) {
+        if ( ( ( h_x + h_r ) > xy_max ) || ( ( h_x - h_r ) < xy_min ) ) {
             continue;
-        } else if ( ( ( h_y + h_r ) > y_max ) || ( ( h_y - h_r ) < y_min ) ) {
+        } else if ( ( ( h_y + h_r ) > xy_max ) || ( ( h_y - h_r ) < xy_min ) ) {
             continue;
         }
         
@@ -119,10 +115,8 @@ void WorldModel::sampleObstacles( const int& num ) {
 planner::WorldModelMsg WorldModel::to_msg( void ) const {
     planner::WorldModelMsg wm;
     
-    wm.x_min = x_min;
-    wm.x_max = x_max;
-    wm.y_min = y_min;
-    wm.y_max = y_max;
+    wm.xy_min = xy_min;
+    wm.xy_max = xy_max;
     
     wm.obstacles = obstacles;
     
@@ -130,7 +124,7 @@ planner::WorldModelMsg WorldModel::to_msg( void ) const {
 }
 
 std::ostream& operator<<( std::ostream& os, const WorldModel& wm ) {
-    os << "WorldModel: x[" << wm.x_min << "," << wm.x_max << "] y[" << wm.y_min << "," << wm.y_max << "]" << std::endl;
+    os << "WorldModel: xy[" << wm.xy_min << "," << wm.xy_max << "]" << std::endl;
     os << "\tObstacles {";
     for ( const planner::ObstacleMsg& obs : wm.obstacles ) {
         os << obs;

@@ -13,17 +13,27 @@ int main( int argc, char* argv[] ) {
 	
 	sleep(1); // Wait 1 second; gives time for ROS connections to be made.
 	
-	double width = 10.0;
-	double height = 10.0;
+	double size = 10.0;
 	double min_radius = 0.1;
 	double max_radius = 0.5;
 	
-	WorldModel world_model( width, height, min_radius, max_radius );
-	world_model.sampleObstacles( 5 );
+	WorldModel world_model( size, min_radius, max_radius );
 	
-	world_model_pub.publish( world_model.to_msg() );
+	// Continually resample and publish example world configurations every 2 seconds
+	int seed = 281;
 	
-	ros::spin();
+	ros::Rate r( 0.5 ); // 0.5 Hz
+	while ( ros::ok() ) {
+        world_model.sampleObstacles( 5, seed );
+	    world_model_pub.publish( world_model.to_msg() );
+	    
+	    seed++; // Increment random seed
+	    if ( ( seed % 5 ) == 0 ) { // Reset world model every 25 obstacles
+	        world_model.obstacles.clear();
+	    }
+	    
+	    r.sleep();
+	}
 	
 	return 0;
 }

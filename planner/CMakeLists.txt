@@ -126,13 +126,14 @@ include_directories(
 ## Declare a C++ library
 add_library(${PROJECT_NAME}
     src/${PROJECT_NAME}/point.cpp
+    src/${PROJECT_NAME}/node.cpp
     src/${PROJECT_NAME}/path.cpp
     src/${PROJECT_NAME}/line.cpp
     src/${PROJECT_NAME}/reference-frame.cpp
     src/${PROJECT_NAME}/world-model.cpp
     src/${PROJECT_NAME}/location-relation.cpp
     src/${PROJECT_NAME}/constraint.cpp
-    src/${PROJECT_NAME}/action.cpp
+    src/${PROJECT_NAME}/command.cpp
     src/${PROJECT_NAME}/ha-rrt.cpp
 )
 

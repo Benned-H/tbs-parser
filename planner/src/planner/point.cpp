@@ -10,7 +10,7 @@ Point::Point( const double& xArg, const double& yArg, const int& obsArg ) : x( x
 }
 
 // Copy constructor
-Point::Point( const Point& p ) : x( p.x ), y( p.y ) {
+Point::Point( const Point& p ) : x( p.x ), y( p.y ), obstacle( p.obstacle ) {
 
 }
 

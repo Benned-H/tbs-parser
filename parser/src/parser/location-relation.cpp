@@ -1,7 +1,7 @@
 // Implements a TBS constraint, which is a union of location relations
 // Author: Benned Hedegaard
 
-#include "planner/location-relation.h"
+#include "parser/location-relation.h"
 
 // Constructor
 LocationRelation::LocationRelation( const RelationType& typeArg, const bool& negatedArg ) : type( typeArg ), negated( negatedArg ) {

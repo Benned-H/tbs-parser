@@ -5,7 +5,7 @@
 #define CONSTRAINT_H
 
 #include <vector>
-#include "planner/location-relation.h"
+#include "parser/location-relation.h"
 
 class Constraint {
 	public:

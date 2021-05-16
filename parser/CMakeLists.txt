@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(planner)
+project(parser)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -11,8 +11,6 @@ find_package(catkin REQUIRED COMPONENTS
 	roscpp
 	std_msgs
 	message_generation
-	geometry_msgs
-	parser
 )
 
 ## System dependencies are found with CMake's conventions
@@ -49,14 +47,11 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-add_message_files(
-    FILES
-    WorldModelMsg.msg
-    ObstacleMsg.msg
-    PointMsg.msg
-    ReferenceFrameMsg.msg
-    ReferenceFrameArrayMsg.msg
-)
+# add_message_files(
+#   FILES
+#   Message1.msg
+#   Message2.msg
+# )
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -73,10 +68,10 @@ add_message_files(
 # )
 
 ## Generate added messages and services with any dependencies listed here
-generate_messages(
-    DEPENDENCIES
-    std_msgs  # Or other packages containing msgs
-)
+# generate_messages(
+#   DEPENDENCIES
+#   std_msgs  # Or other packages containing msgs
+# )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -109,7 +104,7 @@ generate_messages(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
     INCLUDE_DIRS include
-    LIBRARIES planner
+    LIBRARIES parser
 #  CATKIN_DEPENDS other_catkin_pkg
 #  DEPENDS system_lib
 )
@@ -121,18 +116,17 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-    include ${catkin_INCLUDE_DIRS}
+    include
+    ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME}
-    src/${PROJECT_NAME}/point.cpp
-    src/${PROJECT_NAME}/node.cpp
-    src/${PROJECT_NAME}/path.cpp
-    src/${PROJECT_NAME}/line.cpp
-    src/${PROJECT_NAME}/reference-frame.cpp
-    src/${PROJECT_NAME}/world-model.cpp
-    src/${PROJECT_NAME}/ha-rrt.cpp
+    src/${PROJECT_NAME}/location-relation.cpp
+    src/${PROJECT_NAME}/constraint.cpp
+    src/${PROJECT_NAME}/command.cpp
+    src/${PROJECT_NAME}/rule.cpp
+    src/${PROJECT_NAME}/cfg.cpp
 )
 
 ## Add cmake target dependencies of the library
@@ -143,30 +137,21 @@ add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(world_model_node src/world-model-node.cpp)
-add_executable(harrt_node src/harrt-node.cpp)
+add_executable(${PROJECT_NAME}_node src/parser-node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
 ## e.g. "rosrun someones_pkg node" instead of "rosrun someones_pkg someones_pkg_node"
-# set_target_properties(${PROJECT_NAME}_node PROPERTIES OUTPUT_NAME node PREFIX "")
+#set_target_properties(${PROJECT_NAME}_node PROPERTIES OUTPUT_NAME node PREFIX "")
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-add_dependencies(world_model_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(harrt_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(world_model_node
+target_link_libraries(${PROJECT_NAME}_node
     ${catkin_LIBRARIES}
-    planner
-    parser
-)
-
-target_link_libraries(harrt_node
-    ${catkin_LIBRARIES}
-    planner
     parser
 )
 
@@ -217,7 +202,7 @@ target_link_libraries(harrt_node
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_planner.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_parser.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

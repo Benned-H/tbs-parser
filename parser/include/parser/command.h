@@ -4,10 +4,10 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 
-#include "planner/constraint.h"
+#include "parser/constraint.h"
+#include "parser/location-relation.h"
 
 enum Mode { QUICK, SAFE, NONE };
-enum ObstacleType { BARREL, BUSH, CONE, HYDRANT };
 
 class Command {
 	public:

@@ -1,0 +1,5 @@
+<launch>
+    <arg name="sample_number" default="4"/>
+
+	<node name="parser_node" pkg="parser" type="parser_node" output="screen" args="$(arg sample_number)"/>
+</launch>

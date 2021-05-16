@@ -6,6 +6,12 @@
 #include "planner/world-model.h"
 
 int main( int argc, char* argv[] ) {
+    if ( argc < 3 ) { // We expect a seed and num_samples argument
+        std::cout << "argc is " << argc << std::endl;
+	    std::cout << "world_model_node expects 2 arguments: seed and num_samples. Try using the launch file." << std::endl;
+	    return 0; // End the program
+	}
+	
 	ros::init( argc, argv, "world_model_node" );
 	ros::NodeHandle node_handle;
 	
@@ -19,21 +25,29 @@ int main( int argc, char* argv[] ) {
 	
 	WorldModel world_model( size, min_radius, max_radius );
 	
-	// Continually resample and publish example world configurations every 2 seconds
-	int seed = 281;
+	// Continually resample and publish example world configurations every 5 seconds
 	
-	ros::Rate r( 0.5 ); // 0.5 Hz
+	int seed = std::stoi( argv[1] );
+	std::cout << "Seed given was " << seed << std::endl;
+	
+	int num_samples = std::stoi( argv[2] );
+	std::cout << "Number of samples given was " << num_samples << std::endl;
+	
+	/* This chunk of code allows exploring random world models
+	ros::Rate r( 0.2 ); // 0.2 Hz
 	while ( ros::ok() ) {
-        world_model.sampleObstacles( 5, seed );
+        world_model.sampleObstacles( num_samples, seed );
 	    world_model_pub.publish( world_model.to_msg() );
-	    
+	    world_model.obstacles.clear();
 	    seed++; // Increment random seed
-	    if ( ( seed % 5 ) == 0 ) { // Reset world model every 25 obstacles
-	        world_model.obstacles.clear();
-	    }
-	    
 	    r.sleep();
-	}
+	}*/
+	
+	// Instead, I want to observe a few chosen world models in detail
+	world_model.sampleObstacles( num_samples, seed );
+    world_model_pub.publish( world_model.to_msg() );
+    
+    ros::spin();
 	
 	return 0;
 }

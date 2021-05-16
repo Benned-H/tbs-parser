@@ -1,9 +1,10 @@
-<tbs> ::= navigate <mode> <constraint-list> to the <object> <location-relation>
+<tbs> ::= navigate <mode> <constraint-list> to the <object> <goal-relation>
 <mode> ::= quickly | safely | <epsilon>
 <constraint-list> ::= <relation-list> <constraint-tail> | <epsilon>
 <constraint-tail> ::= then <relation-list> <constraint-tail> | <epsilon>
 <relation-list> ::= <relation> <relation-tail>
 <relation-tail> ::= or <relation> <relation-tail> | <epsilon>
 <relation> ::= <location-relation> | not <location-relation>
+<goal-relation> ::= <location-relation> | <epsilon>
 <location-relation> ::= left of the <object> | right of the <object> | behind the <object> | in front of the <object> | near the <object> | far from the <object> | between the <object> and <object>
 <object> ::= barrel | bush | cone | hydrant

@@ -1,7 +1,7 @@
 // Implements a TBS constraint, which is a union of location relations
 // Author: Benned Hedegaard
 
-#include "planner/constraint.h"
+#include "parser/constraint.h"
 
 // Constructor
 Constraint::Constraint( const std::vector<LocationRelation>& relationsArg ) : relations( relationsArg ) {

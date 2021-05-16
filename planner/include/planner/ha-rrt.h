@@ -14,7 +14,7 @@
 #include "planner/ReferenceFrameArrayMsg.h"
 #include "planner/reference-frame.h"
 #include "planner/world-model.h"
-#include "planner/command.h"
+#include "parser/command.h"
 #include "planner/path.h"
 #include "planner/node.h"
 

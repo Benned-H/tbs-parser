@@ -1,7 +1,7 @@
 // Implements a TBS navigate command
 // Author: Benned Hedegaard
 
-#include "planner/command.h"
+#include "parser/command.h"
 
 // Empty constructor
 Command::Command( void ) : mode( Mode::NONE ), motion_constraints(), goal( ObstacleType::BARREL ), goal_constraints() {

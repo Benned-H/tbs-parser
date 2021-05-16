@@ -1,7 +1,10 @@
 <launch>
+    <arg name="seed" default="281"/>
+    <arg name="num_samples" default="5"/>
+    
 	<node pkg="tf2_ros" type="static_transform_publisher" name="gui_to_world" 
 		args="0.0 0.0 0.0 0.0 0.0 0.0 world gui"/>
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find gui)/rviz/tbs-parser.rviz"/>
     <node name="gui_node" pkg="gui" type="gui_node" output="screen"/>
-	<node name="world_model_node" pkg="planner" type="world_model_node" output="screen"/>
+	<node name="world_model_node" pkg="planner" type="world_model_node" output="screen" args="$(arg seed) $(arg num_samples)"/>
 </launch>

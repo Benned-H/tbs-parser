@@ -1,5 +1,6 @@
 <launch>
-    <arg name="sample_number" default="4"/>
+    <arg name="tbs_file" default="tbs.txt"/>
+    <arg name="sample_num" default="3"/>
 
-	<node name="parser_node" pkg="parser" type="parser_node" output="screen" args="$(arg sample_number)"/>
+	<node name="parser_demo_node" pkg="parser" type="parser_demo_node" output="screen" args="$(find parser)/$(arg tbs_file) $(arg sample_num)"/>
 </launch>

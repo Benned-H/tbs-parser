@@ -5,19 +5,6 @@
 #include <iostream>
 #include "parser/cfg.h"
 
-/*** Helper functions ***/
-
-bool in( const std::string& str, const std::vector<std::string>& vec ) {
-    for ( int i = 0; i < vec.size(); i++ ) {
-        if ( str.compare( vec[i] ) == 0 ) {
-            return true;
-        }
-    }
-    return false;
-}
-
-/*** End helper functions ***/
-
 // Constructor
 CFG::CFG( void ) : start_symbol( "" ), nonterminals(), terminals(), rules() {
     
@@ -26,9 +13,119 @@ CFG::CFG( void ) : start_symbol( "" ), nonterminals(), terminals(), rules() {
 // Deconstructor
 CFG::~CFG() {}
 
+// Reads and populates the CFG from a file in Backus-Naur Form
+void CFG::from_file( const std::string& filename ) {
+    std::ifstream myfile;
+    myfile.open( filename ); // Open the file, which will default to input mode
+    
+    // Read each line and store them in a vector
+    std::vector<std::string> lines;
+    std::string line;
+    if ( myfile.is_open() ) {
+        while ( getline( myfile, line ) ) {
+            std::cout << "Read the line: \"" << line << "\"" << std::endl;
+            lines.push_back( line );
+        }
+    } else {
+        std::cout << "Unable to read file \"" << filename << "\" in CFG::from_file()" << std::endl;
+        return;
+    }
+    myfile.close();
+    
+    if ( lines.size() == 0 ) {
+        std::cout << "File had no lines, exiting..." << std::endl;
+        return;
+    }
+    
+    // Now process the lines we read from file
+    std::vector<std::string> tokens;
+    std::string token;
+    for ( int i = 0; i < lines.size(); i++ ) {
+    
+        // For each line, we first tokenize by spaces
+        tokens = tokenize_on_spaces( lines[i] );
+        std::cout << "Found " << tokens.size() << " tokens in the line: " << lines[i] << std::endl;
+        
+        // Now check that we have a valid production
+        if ( tokens.size() < 3 ) {
+            std::cout << "A production needs at least 3 tokens in the line, e.g. \"A := a\"" << std::endl;
+            std::cout << lines[i] << std::endl;
+            return;
+        } else if ( tokens[1].compare("::=") != 0 ) {
+            std::cout << "Rule did not have ::= symbol as second token, exiting..." << std::endl;
+            std::cout << lines[i] << std::endl;
+            return;
+        }
+        
+        // Otherwise it's a presumably valid production
+        if ( i == 0 ) { // Handle start symbol on first line of file
+            start_symbol = tokens[0];
+        }
+        
+        if ( !is_nonterminal( tokens[0] ) ) { // Handle any new nonterminals
+            add_nonterminal( tokens[0] );
+        }
+        
+        // Now segment out each production from the rule
+        auto curr_production = std::make_shared<std::vector<std::string>>();
+        for ( int t_i = 1; t_i < tokens.size(); t_i++ ) { // Loop over all other tokens
+            if ( tokens[t_i].compare("|") == 0 ) { // Indicates that the current production is done
+                if ( curr_production->size() <= 0 ) { // We had an empty production!
+                    std::cout << "Production had no symbols, exiting..." << std::endl;
+                    std::cout << lines[i] << std::endl;
+                    return;
+                } // Otherwise this rule is fine
+                
+                add_production( tokens[0], curr_production ); // Add curr_production to this nonterminal's rule
+                curr_production = std::make_shared<std::vector<std::string>>(); // Reset curr_production
+            } else {
+                curr_production->push_back( tokens[t_i] );
+            }
+        }
+        
+        // Now that we've looped over all tokens, add one last production
+        if ( curr_production->size() <= 0 ) { // We had an empty production!
+            std::cout << "Production had no symbols, exiting..." << std::endl;
+            std::cout << lines[i] << std::endl;
+            return;
+        } // Otherwise this rule is fine
+        
+        add_production( tokens[0], curr_production ); // Add curr_production to this nonterminal's rule
+    }
+}
+
+// Adds a new production to the Rule for the given nonterminal
+void CFG::add_production( const std::string& nt, const std::shared_ptr<std::vector<std::string>>& production ) {
+    std::string token;
+    for ( int i = 0; i < production->size(); i++ ) {
+        token = production->at( i );
+        
+        // Handle new nonterminals
+        if ( ( token.at( 0 ) == '<' ) && ( token.at( token.length() - 1 ) == '>' ) ) {
+            if ( !is_nonterminal( token ) ) {
+                add_nonterminal( token );
+            }
+        } else if ( !is_terminal( token ) ) { // Otherwise tokens are terminals
+            add_terminal( token );
+        }
+    }
+    
+    rules[ nt ]->productions.push_back( production ); // Add production to this nonterminal's rule
+}
+
 // Adds a new terminal to the CFG
 void CFG::add_terminal( const std::string& t ) {
     terminals.push_back( t );
+}
+
+// Returns whether the given string is already a terminal in the CFG
+bool CFG::is_terminal( const std::string& t ) const {
+    for ( const std::string& s : terminals ) {
+        if ( s.compare( t ) == 0 ) {
+            return true;
+        }
+    }
+    return false;
 }
 
 // Adds a new nonterminal to the CFG
@@ -36,6 +133,29 @@ void CFG::add_nonterminal( const std::string& nt ) {
     nonterminals.push_back( nt );
     std::shared_ptr<Rule> empty_rule = std::make_shared<Rule>(); // Create empty rule for this nt
     rules.insert({ nt, empty_rule });
+}
+
+// Returns whether the given string is already a nonterminal in the CFG
+bool CFG::is_nonterminal( const std::string& nt ) const {
+    for ( const std::string& s : nonterminals ) {
+        if ( s.compare( nt ) == 0 ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Tokenizes the given string based on spaces
+std::vector<std::string> CFG::tokenize_on_spaces( const std::string& str ) const {
+    std::vector<std::string> tokens;
+    std::string token;
+    std::stringstream str_stream( str );
+    
+    while ( getline( str_stream, token, ' ' ) ) {
+        tokens.push_back( token );
+    }
+    
+    return tokens;
 }
 
 // Returns a random production for the given nonterminal
@@ -63,7 +183,7 @@ std::vector<std::string> CFG::sample_strings( const int& num, const int& max_len
             std::string token = output_stack.back();
             output_stack.pop_back(); // Pop the stack
             
-            if ( in( token, terminals ) ) { // Token is a terminal => Add to output
+            if ( is_terminal( token ) ) { // Token is a terminal => Add to output
                 output.push_back( token );
                 continue;                    
             } else if ( token.compare( "<epsilon>" ) == 0 ) { // Skip epsilon productions
@@ -93,33 +213,6 @@ std::vector<std::string> CFG::sample_strings( const int& num, const int& max_len
         samples_generated++;
     }
     return results;
-}
-
-std::vector<std::string> tokenize_on_spaces( const std::string& str ) {
-    std::vector<std::string> tokens;
-    
-    std::size_t token_start = 0;
-    std::size_t found = str.find_first_of(" "); // Position of first space in string
-    while ( found != std::string::npos ) { // Indicates we passed the end of the string
-        std::string current_token = str.substr( token_start, found - token_start );
-        
-        // Check if the current token is all spaces
-        bool all_spaces = true;
-        for ( int i = 0; i < current_token.length(); i++ ) {
-            if ( current_token[i] != ' ' ) {
-                all_spaces = false;
-                break;
-            }
-        }
-        
-        if ( !all_spaces && ( current_token.length() > 0 ) ) {
-            tokens.push_back( current_token );
-        }
-        
-        token_start = found + 1;
-        found = str.find_first_of(" ", found + 1); // Moves to next space
-    }
-    return tokens;
 }
 
 // Attempts to parse the given string into a Command object

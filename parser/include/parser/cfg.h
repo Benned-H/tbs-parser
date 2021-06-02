@@ -5,6 +5,8 @@
 #define CFG_H
 
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <string>
 #include <vector>
 #include <memory>
@@ -18,11 +20,26 @@ class CFG {
 	    CFG( void ); // Constructor
 		virtual ~CFG(); // Deconstructor
 		
+		// Reads and populates the CFG from a file in Backus-Naur Form
+		void from_file( const std::string& filename );
+		
+		// Adds a new production to the Rule for the given nonterminal
+		void add_production( const std::string& nt, const std::shared_ptr<std::vector<std::string>>& production );
+		
 		// Adds a new terminal to the CFG
 		void add_terminal( const std::string& t );
 		
+		// Returns whether the given string is already a terminal in the CFG
+		bool is_terminal( const std::string& t ) const;
+		
 		// Adds a new nonterminal to the CFG
 		void add_nonterminal( const std::string& nt );
+		
+		// Returns whether the given string is already a nonterminal in the CFG
+		bool is_nonterminal( const std::string& nt ) const;
+		
+		// Tokenizes the given string based on spaces
+		std::vector<std::string> tokenize_on_spaces( const std::string& str ) const;
 		
 		// Returns a random production for the given nonterminal
         std::shared_ptr<std::vector<std::string>> get_rand_production( const std::string& nt ) const;
